@@ -15,7 +15,7 @@ class article {
     public function __construct($id = NULL) {
         $this->banco = banco::instanciar();
         // define id da revista
-        $this->id = $id;;
+        $this->id = $id;
         return true;
     }
     
@@ -28,6 +28,18 @@ class article {
         $content = file_get_contents($link);
         file_put_contents("{$this->id}.xml", $content);
         return true;
+    }
+    
+    public function get_files() {
+        $q = "select file_name "
+                . "from article_files "
+                . "where article_id = {$this->id}";
+        $res = $this->banco->consultar($q);
+        foreach ($res as $file){
+            $files[] = $file['file_name'];
+        }
+        $files_names = implode("||", $files);
+        return $files_names;
     }
     
 }
