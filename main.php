@@ -44,10 +44,8 @@ foreach ($journal.issues_ids as $issue_id){
     
     foreach ($issue.articles_ids as $article_id){
         
-        $article = new article($article_id);
+        $article = new article($article_id, $journal_id);
         
-        $article.get_xml($journal.path);
-        $article.get_files();
         $csv_article = $article.create_csv_line();
         $csv[] = 
                 $csv_revista .

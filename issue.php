@@ -8,6 +8,7 @@ class issue {
     public $id;
     public $volume, $numero, $ano;
     public $articles_ids;
+    public $files;
     
     /**
      * Obtém volume, numero e ano
@@ -48,6 +49,26 @@ class issue {
         }
         $this->articles_ids = $ids[];
         return true;
+    }
+    
+    /**
+     * Obtém lista de arquivos do artigo
+     * @return boolean
+     */
+    public function get_files(){
+        $q = ""
+                . "select file_name "
+                . "from article_files "
+                . "where article_id={$this->id} "
+                . "order by file_id";
+        $res = $this->banco->consultar($q);
+        $names = array();
+        foreach ($res as $row){
+            $names[] = $row['file_name'];
+        }
+        $this->files = $names[];
+        return true;
+                
     }
     
 }
