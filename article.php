@@ -21,10 +21,10 @@ class article {
         $this->banco = banco::instanciar();
         // define id da revista
         $this->id = $id;
-        // obtém o path da revista a que pertence este artigo
-        $this->get_path();
         // obtém o id da revista
         $this->journalid = $jid;
+        // obtém o path da revista a que pertence este artigo
+        $this->get_path();
         // monta pasta onde estão os arquivos deste artigo
         global $folder;
         //$folder = './files/journals/[JOURNALID]/articles/[ARTICLEID]/public/[FILE]';
@@ -33,8 +33,15 @@ class article {
         return true;
     }
     
+    public function create_csv_line(){
+        $this->get_xml();
+        $line = $this->read_xml();
+        $line.= ',' . $this->get_files();
+        return $line;
+    }
+    
     private function get_path(){
-        $q = "select path from journals where journal_id=" . $this->journalid;
+        $q = "select path from journals where journal_id={$this->journalid}";
         $res = $this->banco->consultar($q);
         $this->journalpath = $res[0]['path'];
         return true;
@@ -52,18 +59,27 @@ class article {
         return $files_names;
     }
     
+    /**
+     * faz download do xml do artigo
+     * @global type $url
+     * @global type $upload
+     * @return boolean
+     */
     private function get_xml() {
         global $url;
+        global $upload;
         $link = "$url"
                 . "{$this->journalpath}"
                 . "/manager/importexport/plugin/NativeImportExportPlugin/exportArticle/"
                 . "{$this->id}";
         $content = file_get_contents($link);
-        file_put_contents("{$this->id}.xml", $content);
+        $xml = $upload . $this->id . 'xml';
+        file_put_contents($xml, $content);
         return true;
     }
     
     private function read_xml(){
+        return true;
         $info = array();
         $xml = new DOMDocument();
         $xml->load("{$this->id}.xml");
@@ -112,14 +128,5 @@ class article {
         unlink("{$this->id}.xml");
         return true;
     }
-    
-    public function create_csv_line(){
-        $this->get_xml();
-        $line = $this->read_xml();
-        $line.= ',' . $this->get_files();
-        return $line;
-    }
-    
-    
-    
+        
 }

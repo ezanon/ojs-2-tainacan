@@ -5,7 +5,7 @@ require_once './journal.php';
 require_once './issue.php';
 require_once './article.php';
 
-$journal_id = 10; //anigeo
+$journal_id = 6; //GUSPSD
 
 $csv = array();
 
@@ -21,32 +21,46 @@ $csv[] = '' //header do csv com definições de criação automática dos campos
 
 $journal = new journal($journal_id);
 
+//
+echo "journal: {$journal->id} \n";
+
 $journal_vals =  array(
-    $journal.id,
-    $journal.path,
-    $journal.name
+    $journal->id,
+    $journal->path,
+    $journal->name
 );
 $csv_journal = implode(',', $journal_vals);
 
-foreach ($journal.issues_ids as $issue_id){
+//
+echo print_r($journal->issues_ids) . " <-Fasciculos\n";
+
+foreach ($journal->issues_ids as $issue_id){
     
     $issue = new issue($issue_id);
-    $issue.get_articles_ids();
+    
+//
+echo "issue: {$issue->id} \n";
     
     $issue_vals = array(
-        $issue.id,
-        $issue.volume,
-        $issue.numero,
-        $issue.ano,
-        $issue.data_publicacao
+        $issue->id,
+        $issue->volume,
+        $issue->numero,
+        $issue->ano,
+        $issue->data_publicacao
     );
     $csv_issue =  implode(',',$valores);
     
-    foreach ($issue.articles_ids as $article_id){
+//
+echo print_r($issue->articles_ids) . " <-Artigos \n";
+    
+    foreach ($issue->articles_ids as $article_id){
         
-        $article = new article($article_id, $journal_id);
+        $article = new article($article_id, $journal->id);
+
+//
+echo "article: {$article->id} \n";
         
-        $csv_article = $article.create_csv_line();
+        $csv_article = $article->create_csv_line();
         $csv[] = 
                 $csv_revista .
                 $csv_issue . 
@@ -55,6 +69,11 @@ foreach ($journal.issues_ids as $issue_id){
     }
     
 }
+
+var_dump($csv);
+
+//
+echo "FIM \n\n";
 
 //$fp = fopen('file.csv', 'w');
 //foreach ($csv as $linha) {

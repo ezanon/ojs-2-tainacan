@@ -6,7 +6,7 @@ class issue {
     
     public $banco;
     public $id;
-    public $volume, $numero, $ano;
+    public $volume, $numero, $ano, $data_publicacao;
     public $articles_ids;
     public $files;
     
@@ -21,14 +21,17 @@ class issue {
         $this->id = $id;
         // obtém volume, numero e ano desta edição
         $q = ""
-                . "select volume, number, year "
+                . "select volume, number, year, date_published "
                 . "from issues "
                 . "where issue_id={$id} "
                 . "limit 1";
         $res = $this->banco->consultar($q);
         $this->volume = $res[0]['volume'];
-        $this->numero = $res[0]['numero'];
-        $this->ano = $res[0]['ano'];
+        $this->numero = $res[0]['number'];
+        $this->ano = $res[0]['year'];
+        $this->data_publicacao = $res[0]['date_published'];
+        // obtém ids dos artigos da revista
+        $this->get_articles_ids();
         return true;
     }
     
@@ -36,7 +39,7 @@ class issue {
      * Obtém ids dos artigos desta publicação
      * @return boolean
      */
-    public function get_issues_ids(){
+    private function get_articles_ids(){
         $q = ""
                 . "select article_id "
                 . "from published_articles "
@@ -45,9 +48,9 @@ class issue {
         $res = $this->banco->consultar($q);
         $ids = array();
         foreach ($res as $row){
-            $ids[] = $row['issue_id'];
+            $ids[] = $row['article_id'];
         }
-        $this->articles_ids = $ids[];
+        $this->articles_ids = $ids;
         return true;
     }
     
@@ -66,7 +69,7 @@ class issue {
         foreach ($res as $row){
             $names[] = $row['file_name'];
         }
-        $this->files = $names[];
+        $this->files = $names;
         return true;
                 
     }

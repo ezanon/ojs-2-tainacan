@@ -8,7 +8,7 @@ class journal {
     public $id;
     public $path;
     public $name;
-    public $issues_ids;
+    public $issues_ids = array();
     
     
     /**
@@ -57,7 +57,7 @@ class journal {
         foreach ($res as $row){
             $ids[] = $row['issue_id'];
         }
-        $this->issues_ids = $ids[];
+        $this->issues_ids = $ids;
         return true;
     }
     
