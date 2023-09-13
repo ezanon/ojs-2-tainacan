@@ -73,7 +73,7 @@ class article {
                 . "/manager/importexport/plugin/NativeImportExportPlugin/exportArticle/"
                 . "{$this->id}";
         $content = file_get_contents($link);
-        $xml = $upload . $this->id . 'xml';
+        $xml = $upload . $this->id . '.xml';
         file_put_contents($xml, $content);
         return true;
     }
