@@ -29,7 +29,10 @@ class issue {
         $this->volume = $res[0]['volume'];
         $this->numero = $res[0]['number'];
         $this->ano = $res[0]['year'];
-        $this->data_publicacao = $res[0]['date_published'];
+        //$this->data_publicacao = $res[0]['date_published'];
+        $aux = $res[0]['date_published'];
+        $aux = explode(" ", $aux);
+        $this->data_publicacao = $aux[0];
         // obtém ids dos artigos da revista
         $this->get_articles_ids();
         return true;

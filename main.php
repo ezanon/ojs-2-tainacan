@@ -17,12 +17,14 @@ $csv[] = '' //header do csv com definições de criação automática dos campos
         . ',Volume'
         . ',Número'
         . ',Ano'
-        . ',"Data da Publicação"'; 
+        . ',\'Data da Publicação\''
+        . ',Paginas'
+        . ',Document'; 
 
 $journal = new journal($journal_id);
 
 //
-echo "journal: {$journal->id} \n";
+echo "\n\nJOURNAL: {$journal->id} \n";
 
 $journal_vals =  array(
     $journal->id,
@@ -38,8 +40,8 @@ foreach ($journal->issues_ids as $issue_id){
     
     $issue = new issue($issue_id);
     
-//
-echo "issue: {$issue->id} \n";
+    //
+    echo "\n\nISSUE: {$issue->id} \n";
     
     $issue_vals = array(
         $issue->id,
@@ -48,35 +50,36 @@ echo "issue: {$issue->id} \n";
         $issue->ano,
         $issue->data_publicacao
     );
-    $csv_issue =  implode(',',$valores);
+    $csv_issue =  implode(',',$issue_vals);
     
-//
-echo print_r($issue->articles_ids) . " <-Artigos \n";
+    //
+    echo print_r($issue->articles_ids) . " <-Artigos \n";
     
     foreach ($issue->articles_ids as $article_id){
         
         $article = new article($article_id, $journal->id);
 
-//
-echo "article: {$article->id} \n";
+        //
+        echo "\n\nARTICLE: {$article->id} \n";
         
         $csv_article = $article->create_csv_line();
         $csv[] = 
-                $csv_revista .
-                $csv_issue . 
+                $csv_journal . ',' .
+                $csv_issue . ',' .
                 $csv_article;
         
     }
     
 }
 
-var_dump($csv);
-
 //
-echo "FIM \n\n";
+echo "\n\nFIM \n\n";
 
-//$fp = fopen('file.csv', 'w');
-//foreach ($csv as $linha) {
-//    fputcsv($fp, $linha);
-//}
-//fclose($fp);
+$fp = fopen('saida.csv', 'w');
+foreach ($csv as $linha) {
+    $dados = explode(',',$linha);
+    fputcsv($fp, $dados);
+}
+fclose($fp);
+
+echo "https://dev2.igc.usp.br/ojs-2-tainacan/saida.csv \n\n";

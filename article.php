@@ -1,6 +1,7 @@
 <?php
 
 require_once './banco.php';
+require_once './author.php';
 
 class article {
     
@@ -10,6 +11,7 @@ class article {
     public $journalid;
     public $issueid;
     public $filesfolder;
+    public $paginas;
     
     /**
      * 
@@ -35,7 +37,18 @@ class article {
     
     public function create_csv_line(){
         $this->get_xml();
-        $line = $this->read_xml();
+        //$line = $this->read_xml();
+        $line = $this->id;
+        $line.= ',' . $this->get_titulo();
+        $line.= ',' . $this->get_titulo('en_US');
+        $line.= ',' . $this->get_autores();
+        $line.= ',' . $this->get_autores('en_US');
+        $line.= ',' . $this->get_resumo();
+        $line.= ',' . $this->get_resumo('en_US');
+        $line.= ',' . $this->get_palavraschaves();
+        $line.= ',' . $this->get_palavraschaves('en_US');
+        $line.= ',' . $this->get_pages();
+        $line.= ',' . $this->get_doi();
         $line.= ',' . $this->get_files();
         return $line;
     }
@@ -48,15 +61,70 @@ class article {
     }
     
     private function get_files() {
-        $q = "select file_name "
-                . "from article_files "
-                . "where article_id = {$this->id}";
+        // modelo: https://ppegeo.igc.usp.br/index.php/GeoCT/article/download/13983/13581
+        // https://ppegeo.igc.usp.br/index.php/[alias]/article/download/[13983]/[13581]
+        $q = "select file_name from article_files where article_id = {$this->id}";
         $res = $this->banco->consultar($q);
         foreach ($res as $file){
             $files[] = $this->filesfolder . $file['file_name'];
         }
         $files_names = implode("||", $files);
         return $files_names;
+    }
+    
+    private function get_titulo($locale = 'pt_BR'){
+        $q = "select setting_value as titulo from article_settings "
+                . "where article_id={$this->id} "
+                . "and setting_name='cleanTitle' and locale='{$locale}'";
+        $res = $this->banco->consultar($q);
+        $this->paginas = $res[0]['titulo'];
+    }
+    
+    private function get_autores(){
+        // obtém ids dos autores
+        $q = "select author_id as id from authors where submission_id=$this->id order by author_id";
+        $res = $this->banco->consultar($q);
+        // loop nos autores pegando seus dados
+        $autores = array();
+        foreach ($res as $r){
+            $autor = new author($r['id']);
+            $autores[] = $autor->get_dados();
+        }
+        $saida = implode('||', $autores);
+        $saida = "'" . $saida . "'";
+        return $saida;
+    }
+    
+    private function get_resumo($locale = 'pt_BR'){
+        $q = "select setting_value as resumo from article_settings "
+                . "where article_id={$this->id} "
+                . "and setting_name='pub-id::doi' and locale='{$locale}'";
+        $res = $this->banco->consultar($q);
+        $this->paginas = $res[0]['resumo'];
+        return true;
+    }
+    
+    private function get_palavraschaves($locale = 'pt_BR'){
+        $q = "select setting_value as keywords from article_settings "
+                . "where article_id={$this->id} "
+                . "and setting_name='subject' and locale='{$locale}'";
+        $res = $this->banco->consultar($q);
+        $this->paginas = $res[0]['keywords'];
+        return true;
+    }
+    
+    private function get_pages(){
+        $q = "select pages from articles where article_id = {$this->id}";
+        $res = $this->banco->consultar($q);
+        $this->paginas = $res[0]['pages'];
+        return true;
+    }
+    
+    private function get_doi(){
+        $q = "select setting_value as doi from article_settings where article_id={$this->id} and setting_name='pub-id::doi'";
+        $res = $this->banco->consultar($q);
+        $this->paginas = $res[0]['doi'];
+        return true;
     }
     
     /**
