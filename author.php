@@ -32,7 +32,7 @@ class author {
     }
     
     private function get_name(){
-        $q = "select first_name, middle_name, last_name from journals where author_id={$this->id}";
+        $q = "select first_name, middle_name, last_name from authors where author_id={$this->id}";
         $res = $this->banco->consultar($q);
         $this->nome = implode(' ', $res[0]);
         $this->nome = trim(preg_replace('/\s\s+/',' ', $this->nome)); // retira espaços em excesso
@@ -40,9 +40,9 @@ class author {
     }
     
     private function get_email(){
-        $q = "select email from journals where author_id={$this->id}";
+        $q = "select email from authors where author_id={$this->id}";
         $res = $this->banco->consultar($q);
-        $this->email = implode(' ', $res[0]['email']);
+        $this->email = $res[0]['email'];
         if (
                 ($this->email=='padrao@usp.br') or
                 ($this->email=='thalita.almeida@usp.br')

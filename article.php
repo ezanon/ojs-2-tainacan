@@ -10,8 +10,9 @@ class article {
     public $journalpath;
     public $journalid;
     public $issueid;
+    public $locales;
     public $filesfolder;
-    public $paginas;
+    public $title, $authors, $abstract, $keywords, $pages, $doi, $file, $files;
     
     /**
      * 
@@ -27,26 +28,43 @@ class article {
         $this->journalid = $jid;
         // obtém o path da revista a que pertence este artigo
         $this->get_path();
+        // obtém locales do artigo
+        $this->get_locales();
         // monta pasta onde estão os arquivos deste artigo
         global $folder;
-        //$folder = './files/journals/[JOURNALID]/articles/[ARTICLEID]/public/[FILE]';
+        //$folder = './files/journals/[JOURNALID]/articles/[ARTICLEID]/public/';
         $this->filesfolder = str_replace('[JOURNALID]', $this->journalid, $folder);
         $this->filesfolder = str_replace('[ARTICLEID]', $this->id, $this->filesfolder);
+        // obtém dados
+        $this->get_data();
+        return true;
+    }
+    
+    private function get_data(){
+        $line = $this->id;
+        foreach ($this->locales as $locale) {
+            $this->title[$locale] = $this->get_titulo($locale);
+            $this->authors[$locale] = $this->get_autores($locale);
+            $this->abstract[$locale] = $this->get_resumo($locale);
+            $this->keywords[$locale] = $this->get_palavraschaves($locale);
+        }
+        $this->pages = $this->get_pages();
+        $this->doi = $this->get_doi();
+        $this->file = $this->get_files();
+        $this->files = $this->get_files();
         return true;
     }
     
     public function create_csv_line(){
-        $this->get_xml();
+        //$this->get_xml();
         //$line = $this->read_xml();
         $line = $this->id;
-        $line.= ',' . $this->get_titulo();
-        $line.= ',' . $this->get_titulo('en_US');
-        $line.= ',' . $this->get_autores();
-        $line.= ',' . $this->get_autores('en_US');
-        $line.= ',' . $this->get_resumo();
-        $line.= ',' . $this->get_resumo('en_US');
-        $line.= ',' . $this->get_palavraschaves();
-        $line.= ',' . $this->get_palavraschaves('en_US');
+        foreach ($this->locales as $locale) {
+            $line.= ',' . $this->get_titulo($locale);
+            $line.= ',' . $this->get_autores($locale);
+            $line.= ',' . $this->get_resumo($locale);
+            $line.= ',' . $this->get_palavraschaves($locale);
+        }
         $line.= ',' . $this->get_pages();
         $line.= ',' . $this->get_doi();
         $line.= ',' . $this->get_files();
@@ -60,6 +78,26 @@ class article {
         return true;
     }
     
+    /**
+     * Obtém idiomas do artigo
+     * @return boolean
+     */
+    private function get_locales(){
+        $q = "select locale 
+                from ojs_ppegeo.article_settings 
+                where article_id={$this->id} and locale != ''
+                group by locale ";
+        $res = $this->banco->consultar($q);
+        foreach ($res as $r){
+            $this->locales[] = $r['locale'];
+        }
+        return true;
+    }
+    
+    /**
+     * Obtém lista de arquivos do artigo
+     * @return type
+     */
     private function get_files() {
         // modelo: https://ppegeo.igc.usp.br/index.php/GeoCT/article/download/13983/13581
         // https://ppegeo.igc.usp.br/index.php/[alias]/article/download/[13983]/[13581]
@@ -77,9 +115,14 @@ class article {
                 . "where article_id={$this->id} "
                 . "and setting_name='cleanTitle' and locale='{$locale}'";
         $res = $this->banco->consultar($q);
-        $this->paginas = $res[0]['titulo'];
+        $titulo = @!is_null($res[0]['titulo']) ? $res[0]['titulo'] : '';
+        return $titulo;
     }
     
+    /**
+     * Retorna os autores dos artigos junto de seu email e afiliação
+     * @return string
+     */
     private function get_autores(){
         // obtém ids dos autores
         $q = "select author_id as id from authors where submission_id=$this->id order by author_id";
@@ -90,18 +133,18 @@ class article {
             $autor = new author($r['id']);
             $autores[] = $autor->get_dados();
         }
-        $saida = implode('||', $autores);
-        $saida = "'" . $saida . "'";
-        return $saida;
+        $authors = implode('||', $autores);
+        $authors = "'" . $authors . "'";
+        return $authors;
     }
     
     private function get_resumo($locale = 'pt_BR'){
-        $q = "select setting_value as resumo from article_settings "
-                . "where article_id={$this->id} "
-                . "and setting_name='pub-id::doi' and locale='{$locale}'";
+        $q = "select setting_value as resumo from article_settings 
+                where article_id={$this->id} 
+                and setting_name='abstract' and locale='{$locale}'";
         $res = $this->banco->consultar($q);
-        $this->paginas = $res[0]['resumo'];
-        return true;
+        $resumo = @!is_null($res[0]['resumo']) ? $res[0]['resumo'] : '';
+        return $resumo;
     }
     
     private function get_palavraschaves($locale = 'pt_BR'){
@@ -109,92 +152,22 @@ class article {
                 . "where article_id={$this->id} "
                 . "and setting_name='subject' and locale='{$locale}'";
         $res = $this->banco->consultar($q);
-        $this->paginas = $res[0]['keywords'];
-        return true;
+        $palavraschaves = @!is_null($res[0]['keywords']) ? $res[0]['keywords'] : '';
+        return $palavraschaves;
     }
     
     private function get_pages(){
         $q = "select pages from articles where article_id = {$this->id}";
         $res = $this->banco->consultar($q);
-        $this->paginas = $res[0]['pages'];
-        return true;
+        $paginas = @!is_null($res[0]['pages']) ? $res[0]['pages'] : '';
+        return $paginas;
     }
     
     private function get_doi(){
         $q = "select setting_value as doi from article_settings where article_id={$this->id} and setting_name='pub-id::doi'";
         $res = $this->banco->consultar($q);
-        $this->paginas = $res[0]['doi'];
-        return true;
-    }
-    
-    /**
-     * faz download do xml do artigo
-     * @global type $url
-     * @global type $upload
-     * @return boolean
-     */
-    private function get_xml() {
-        global $url;
-        global $upload;
-        $link = "$url"
-                . "{$this->journalpath}"
-                . "/manager/importexport/plugin/NativeImportExportPlugin/exportArticle/"
-                . "{$this->id}";
-        $content = file_get_contents($link);
-        $xml = $upload . $this->id . '.xml';
-        file_put_contents($xml, $content);
-        return true;
-    }
-    
-    private function read_xml(){
-        return true;
-        $info = array();
-        $xml = new DOMDocument();
-        $xml->load("{$this->id}.xml");
-        
-        $article = $xml->getElementsByTagName('article');
-        // titulo do artigo
-        $node = $article->getElementsByTagName('title');
-        $info['title'] = $node->nodeValue;
-        // abstract
-        $node = $article->getElementsByTagName('abstract');
-        $info['abstract'] = $node->nodeValue;
-        // pages
-        $node = $article->getElementsByTagName('pages');
-        $info['pages'] = $node->nodeValue;
-        // date_published
-        $node = $article->getElementsByTagName('date_published');
-        $info['date_published'] = $node->nodeValue;
-        // autores  VER COM ANDERSON
-        $nodes = $article->getElementsByTagName('author');
-        $i = 0;
-        $autores = array();
-        foreach ($nodes as $node){
-            if ($i>0){
-                $info['author'][$i].= '||'; // separador para vários autores
-            }
-            // nome do autor
-            $nd = $node->getElementsByTagName('firstname');
-            $autores[$i] = $nd->nodeValue;
-            $nd = $node->getElementsByTagName('middlename');
-            $autores[$i].= ' ' . $nd->nodeValue;
-            $nd = $node->getElementsByTagName('lastname');
-            $autores[$i].= ' ' . $nd->nodeValue;
-            // email do autor
-            $nd = $node->getElementsByTagName('email');
-            $autores[$i].= ' [' . $nd->nodeValue . ']';
-            // afiliação
-            $nd = $node->getElementsByTagName('affiliation');
-            $autores[$i].= ' [' . $nd->nodeValue . ']';
-            $i++;
-        }
-        $info['authors'] = implode('||', $autores);
-        return true;
-    }
-    
-    private function del_xml(){
-        unlink("{$this->id}.xml");
-        return true;
+        $doi = @!is_null($res[0]['doi']) ? $res[0]['doi'] : '';
+        return $doi;
     }
         
 }
