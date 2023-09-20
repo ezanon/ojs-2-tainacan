@@ -33,10 +33,10 @@ class journal {
                 . "select setting_value "
                 . "from journal_settings "
                 . "where journal_id={$id} "
-                . "and setting_name = 'searchDescription' "
+                . "and setting_name = 'title' "
                 . "limit 1";
         $res = $this->banco->consultar($q);
-        $this->name = $res[0]['setting_value'];
+        $this->name = utf8_encode($res[0]['setting_value']);
         // obtém ids dos fascículos da revista
         $this->get_issues_ids();
         return true;

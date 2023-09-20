@@ -44,31 +44,14 @@ class article {
         $line = $this->id;
         foreach ($this->locales as $locale) {
             $this->title[$locale] = $this->get_titulo($locale);
-            $this->authors[$locale] = $this->get_autores($locale);
             $this->abstract[$locale] = $this->get_resumo($locale);
             $this->keywords[$locale] = $this->get_palavraschaves($locale);
         }
+        $this->authors = $this->get_autores();
         $this->pages = $this->get_pages();
         $this->doi = $this->get_doi();
-        $this->file = $this->get_files();
-        $this->files = $this->get_files();
+        $this->get_files();
         return true;
-    }
-    
-    public function create_csv_line(){
-        //$this->get_xml();
-        //$line = $this->read_xml();
-        $line = $this->id;
-        foreach ($this->locales as $locale) {
-            $line.= ',' . $this->get_titulo($locale);
-            $line.= ',' . $this->get_autores($locale);
-            $line.= ',' . $this->get_resumo($locale);
-            $line.= ',' . $this->get_palavraschaves($locale);
-        }
-        $line.= ',' . $this->get_pages();
-        $line.= ',' . $this->get_doi();
-        $line.= ',' . $this->get_files();
-        return $line;
     }
     
     private function get_path(){
@@ -101,13 +84,18 @@ class article {
     private function get_files() {
         // modelo: https://ppegeo.igc.usp.br/index.php/GeoCT/article/download/13983/13581
         // https://ppegeo.igc.usp.br/index.php/[alias]/article/download/[13983]/[13581]
+        // https://dev2.igc.usp.br/ojs-2-tainacan/wow/
         $q = "select file_name from article_files where article_id = {$this->id}";
         $res = $this->banco->consultar($q);
         foreach ($res as $file){
             $files[] = $this->filesfolder . $file['file_name'];
         }
-        $files_names = implode("||", $files);
-        return $files_names;
+        
+        $this->file = $files[0]; // arquivo principal
+        unset($files[0]);
+        $this->files = implode("||", $files); // anexos
+        
+        return true;
     }
     
     private function get_titulo($locale = 'pt_BR'){
@@ -116,7 +104,7 @@ class article {
                 . "and setting_name='cleanTitle' and locale='{$locale}'";
         $res = $this->banco->consultar($q);
         $titulo = @!is_null($res[0]['titulo']) ? $res[0]['titulo'] : '';
-        return $titulo;
+        return utf8_encode($titulo);
     }
     
     /**
@@ -135,7 +123,7 @@ class article {
         }
         $authors = implode('||', $autores);
         $authors = "'" . $authors . "'";
-        return $authors;
+        return utf8_encode($authors);
     }
     
     private function get_resumo($locale = 'pt_BR'){
@@ -144,7 +132,7 @@ class article {
                 and setting_name='abstract' and locale='{$locale}'";
         $res = $this->banco->consultar($q);
         $resumo = @!is_null($res[0]['resumo']) ? $res[0]['resumo'] : '';
-        return $resumo;
+        return utf8_encode($resumo);
     }
     
     private function get_palavraschaves($locale = 'pt_BR'){
@@ -153,7 +141,7 @@ class article {
                 . "and setting_name='subject' and locale='{$locale}'";
         $res = $this->banco->consultar($q);
         $palavraschaves = @!is_null($res[0]['keywords']) ? $res[0]['keywords'] : '';
-        return $palavraschaves;
+        return utf8_encode($palavraschaves);
     }
     
     private function get_pages(){

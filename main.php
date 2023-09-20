@@ -5,108 +5,158 @@ require_once './journal.php';
 require_once './issue.php';
 require_once './article.php';
 
-$journal_id = 6; //GUSPSD
+if (@$argv[1])
+    $workingon = $argv[1]; // id da revista passada como parametro 
+else 
+    $workingon = 'all'; // todas as revistas
 
-$csv = array();
+$html = "<table border=1>\n";
 
-// linha 0 é o cabecalho
-$csv[0][] = 'Journal_id';
-$csv[0][] = 'Journal_path';
-$csv[0][] = 'Journal_name';
-$csv[0][] = 'Issue_id';
-$csv[0][] = 'Volume';
-$csv[0][] = 'Número';
-$csv[0][] = 'Ano';
-$csv[0][] = 'Data da Publicação';
-
-$lin = 1; // contador de linha do $csv
-
-$journal = new journal($journal_id);
-
-echo "\n\nJOURNAL: {$journal->id} \n";
-
-$csv[$lin][] = $journal->id;
-$csv[$lin][] = $journal->path;
-$csv[$lin][] = $journal->name;
-
-// obtém locales
-$banco = banco::instanciar();
-$q = "select locale, count(locale) as n
-        from article_settings 
-        where locale != ''
-        group by locale 
-        order by n desc";
-$res = $banco->consultar($q);
-
-foreach ($res as $r){
-    $locales[] = $r['locale'];
+if ($workingon=='all'){
+    // obtém ids das revistas
+    $banco = banco::instanciar();
+    $q = "select journal_id
+            from journals 
+            where enabled = 1
+            order by seq";
+    $res = $banco->consultar($q);
+    foreach($res as $r){
+        $journal_ids[] = $r['journal_id'];
+    }
 }
+else 
+    $journal_ids[] = $workingon;
 
-//echo print_r($journal->issues_ids) . " <-Fasciculos\n";
+foreach($journal_ids as $journal_id){
+    
+    $csv = array();
 
-foreach ($journal->issues_ids as $issue_id){
-    
-    $issue = new issue($issue_id);
+    // linha 0 é o cabecalho
+    $csv[0][] = 'Journal_id|numeric|status_private';
+    $csv[0][] = 'Journal_path|taxonomy';
+    $csv[0][] = 'Revista|text';
 
-    echo "\n\nISSUE: {$issue->id} \n";
-    
-    $csv[$lin][] = $issue->id;
-    $csv[$lin][] = $issue->volume;
-    $csv[$lin][] = $issue->numero;
-    $csv[$lin][] = $issue->ano;
-    $csv[$lin][] = $issue->data_publicacao;
-    
-    //echo print_r($issue->articles_ids) . " <-Artigos \n";
-    
-    foreach ($issue->articles_ids as $article_id){
-        
-        $article = new article($article_id, $journal->id);
+    $csv[0][] = 'Issue_id|numeric|status_private';
+    $csv[0][] = 'Volume|taxonomy';
+    $csv[0][] = 'Número|taxonomy';
+    $csv[0][] = 'Ano|taxonomy';
+    $csv[0][] = 'Data da Publicação';
 
-        echo "\n\nARTICLE: {$article->id} \n";
-        
-        // id
-        $csv[$lin][] = $article->id;
-        
-        // titulo
-        foreach ($locales as $locale){
-            $csv[$lin][] = @$article->title[$locale] ? $article->title[$locale] : '';
+    $csv[0][] = 'Article_id|numeric|status_private';
+    $csv[0][] = 'Título';
+    $csv[0][] = 'Title (English)';
+    $csv[0][] = 'Título (Español)';
+    $csv[0][] = 'Titre (Français)';
+    $csv[0][] = 'Titel (Deutsch)';
+    $csv[0][] = 'Autores';
+    $csv[0][] = 'Resumo|textarea';
+    $csv[0][] = 'Abstract (English)|textarea';
+    $csv[0][] = 'Resumen (Español)|textarea';
+    $csv[0][] = 'Résumé (Français)|textarea';
+    $csv[0][] = 'Zusammenfassung (Deutsch)|textarea';
+    $csv[0][] = 'Palavras-chave|taxonomy|multiple';
+    $csv[0][] = 'Keywords (English)|taxonomy|multiple';
+    $csv[0][] = 'Palabras clave (Español)|taxonomy|multiple';
+    $csv[0][] = 'Mots clés (Français)|taxonomy|multiple';
+    $csv[0][] = 'Schlüsselwörter (Deutsch)|taxonomy|multiple';
+    $csv[0][] = 'Páginas';
+    $csv[0][] = 'DOI';
+    $csv[0][] = 'special_document';
+    $csv[0][] = 'special_attachments';
+
+    $lin = 1; // contador de linha do $csv
+
+    $journal = new journal($journal_id);
+
+    echo "\n\nJOURNAL: {$journal->id} \n";
+
+    // obtém locales
+    $banco = banco::instanciar();
+    $q = "select locale, count(locale) as n
+            from article_settings 
+            where locale != ''
+            group by locale 
+            order by n desc";
+    $res = $banco->consultar($q);
+
+    foreach ($res as $r){
+        if ($r['locale']=='fr_CA') continue;
+        $locales[] = $r['locale'];
+    }
+
+    foreach ($journal->issues_ids as $issue_id){
+
+        $issue = new issue($issue_id);
+
+        foreach ($issue->articles_ids as $article_id){
+
+            // dados da revista e do fasciculo
+            $csv[$lin][] = $journal->id;
+            $csv[$lin][] = $journal->path;
+            $csv[$lin][] = $journal->name;
+            $csv[$lin][] = $issue->id;
+            $csv[$lin][] = $issue->volume;
+            $csv[$lin][] = $issue->numero;
+            $csv[$lin][] = $issue->ano;
+            $csv[$lin][] = $issue->data_publicacao;
+
+            $article = new article($article_id, $journal->id);
+
+            // id
+            $csv[$lin][] = $article->id;
+
+            // titulo
+            foreach ($locales as $locale){
+                $csv[$lin][] = @$article->title[$locale] ? $article->title[$locale] : '';
+            }
+
+            // autores
+            $csv[$lin][] = $article->authors;
+
+            // resumo;
+            foreach ($locales as $locale){
+                $csv[$lin][] = @$article->abstract[$locale] ? $article->abstract[$locale] : '';
+            }
+
+            // palavraschaves
+            foreach ($locales as $locale){
+                $csv[$lin][] = @$article->keywords[$locale] ? $article->keywords[$locale] : '';
+            }
+
+            // demais dados independentes do locale
+            $csv[$lin][] = $article->pages;
+            $csv[$lin][] = $article->doi;
+            $csv[$lin][] = 'file:' . $article->file;
+            $csv[$lin][] = $article->files;
+
+            $lin++;
+            echo '.';
+
+            //sleep(0.5);
+
         }
-        
-        // autores
-        foreach ($locales as $locale){
-            $csv[$lin][] = @$article->authors[$locale] ? $article->authors[$locale] : '';
-        }
-        
-        // resumo;
-        foreach ($locales as $locale){
-            $csv[$lin][] = @$article->abstract[$locale] ? $article->abstract[$locale] : '';
-        }
-        
-        // palavraschaves
-        foreach ($locales as $locale){
-            $csv[$lin][] = @$article->keywords[$locale] ? $article->keywords[$locale] : '';
-        }
-        
-        // demais dados independentes do locale
-        $csv[$lin][] = $article->pages;
-        $csv[$lin][] = $article->doi;
-        $csv[$lin][] = $article->file;
-        $csv[$lin][] = $article->files;
-        
-        echo "\n----------------\n";
-        sleep(1);
         
     }
-    
-}
 
-$fp = fopen('saida.csv', 'w');
-foreach ($csv as $linha) {
-    fputcsv($fp, $linha);
-}
+    $saida = "ojs-{$journal->id}-{$journal->path}.csv";
+    $fp = fopen($saida, 'w');
+    foreach ($csv as $linha) {
+        fputcsv($fp, $linha);
+    }
+    fclose($fp);
+    
+    $html.= "<tr><td><a href=https://dev2.igc.usp.br/ojs-2-tainacan/{$saida}>{$journal->id}</a></td><td>{$journal->path}</td><td>{$journal->name}</td></tr>"
+            . "\n";
+
+} 
+
+$html.= "</table>";
+
+$saida = "index.html";
+$fp = fopen($saida, 'w');
+fputs($fp, $html);
 fclose($fp);
 
-echo "https://dev2.igc.usp.br/ojs-2-tainacan/saida.csv \n\n";
-
-
+echo "\n\nhttps://dev2.igc.usp.br/ojs-2-tainacan/index.html \n\n";
+    
 echo "\n\nFIM \n\n";
