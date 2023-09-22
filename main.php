@@ -27,6 +27,20 @@ if ($workingon=='all'){
 else 
     $journal_ids[] = $workingon;
 
+// obtém locales
+$banco = banco::instanciar();
+$q = "select locale, count(locale) as n
+        from article_settings 
+        where locale != ''
+        group by locale 
+        order by n desc";
+$res = $banco->consultar($q);
+
+foreach ($res as $r){
+    if ($r['locale']=='fr_CA') continue;
+    $locales[] = $r['locale'];
+}
+
 foreach($journal_ids as $journal_id){
     
     $csv = array();
@@ -43,22 +57,28 @@ foreach($journal_ids as $journal_id){
     $csv[0][] = 'Data da Publicação';
 
     $csv[0][] = 'Article_id|numeric|status_private';
-    $csv[0][] = 'Título';
-    $csv[0][] = 'Title (English)';
-    $csv[0][] = 'Título (Español)';
-    $csv[0][] = 'Titre (Français)';
-    $csv[0][] = 'Titel (Deutsch)';
     $csv[0][] = 'Autores';
+    
+    $csv[0][] = 'Título';
     $csv[0][] = 'Resumo|textarea';
-    $csv[0][] = 'Abstract (English)|textarea';
-    $csv[0][] = 'Resumen (Español)|textarea';
-    $csv[0][] = 'Résumé (Français)|textarea';
-    $csv[0][] = 'Zusammenfassung (Deutsch)|textarea';
     $csv[0][] = 'Palavras-chave|taxonomy|multiple';
+    
+    $csv[0][] = 'Title (English)';
+    $csv[0][] = 'Abstract (English)|textarea';
     $csv[0][] = 'Keywords (English)|taxonomy|multiple';
+    
+    $csv[0][] = 'Título (Español)';
+    $csv[0][] = 'Resumen (Español)|textarea';
     $csv[0][] = 'Palabras clave (Español)|taxonomy|multiple';
+    
+    $csv[0][] = 'Titre (Français)';
+    $csv[0][] = 'Résumé (Français)|textarea';
     $csv[0][] = 'Mots clés (Français)|taxonomy|multiple';
+    
+    $csv[0][] = 'Titel (Deutsch)';
+    $csv[0][] = 'Zusammenfassung (Deutsch)|textarea';
     $csv[0][] = 'Schlüsselwörter (Deutsch)|taxonomy|multiple';
+    
     $csv[0][] = 'Páginas';
     $csv[0][] = 'DOI';
     $csv[0][] = 'special_document';
@@ -70,30 +90,17 @@ foreach($journal_ids as $journal_id){
 
     echo "\n\nJOURNAL: {$journal->id} \n";
 
-    // obtém locales
-    $banco = banco::instanciar();
-    $q = "select locale, count(locale) as n
-            from article_settings 
-            where locale != ''
-            group by locale 
-            order by n desc";
-    $res = $banco->consultar($q);
-
-    foreach ($res as $r){
-        if ($r['locale']=='fr_CA') continue;
-        $locales[] = $r['locale'];
-    }
-
     foreach ($journal->issues_ids as $issue_id){
 
         $issue = new issue($issue_id);
 
         foreach ($issue->articles_ids as $article_id){
 
-            // dados da revista e do fasciculo
+            // dados da revista
             $csv[$lin][] = $journal->id;
             $csv[$lin][] = $journal->path;
             $csv[$lin][] = $journal->name;
+            // dados do fasciculo
             $csv[$lin][] = $issue->id;
             $csv[$lin][] = $issue->volume;
             $csv[$lin][] = $issue->numero;
@@ -104,22 +111,14 @@ foreach($journal_ids as $journal_id){
 
             // id
             $csv[$lin][] = $article->id;
-
-            // titulo
-            foreach ($locales as $locale){
-                $csv[$lin][] = @$article->title[$locale] ? $article->title[$locale] : '';
-            }
-
+            
             // autores
             $csv[$lin][] = $article->authors;
 
-            // resumo;
+            // titulo, resumo e palavras chaves possuem locales
             foreach ($locales as $locale){
+                $csv[$lin][] = @$article->title[$locale] ? $article->title[$locale] : '';
                 $csv[$lin][] = @$article->abstract[$locale] ? $article->abstract[$locale] : '';
-            }
-
-            // palavraschaves
-            foreach ($locales as $locale){
                 $csv[$lin][] = @$article->keywords[$locale] ? $article->keywords[$locale] : '';
             }
 
@@ -147,6 +146,8 @@ foreach($journal_ids as $journal_id){
     
     $html.= "<tr><td><a href=https://dev2.igc.usp.br/ojs-2-tainacan/{$saida}>{$journal->id}</a></td><td>{$journal->path}</td><td>{$journal->name}</td></tr>"
             . "\n";
+    
+    //print_r($csv);
 
 } 
 
@@ -158,5 +159,5 @@ fputs($fp, $html);
 fclose($fp);
 
 echo "\n\nhttps://dev2.igc.usp.br/ojs-2-tainacan/index.html \n\n";
-    
+
 echo "\n\nFIM \n\n";
