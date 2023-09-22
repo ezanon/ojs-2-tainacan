@@ -186,8 +186,21 @@ class article {
                 . "and setting_name='subject' and locale='{$locale}'";
         $res = $this->banco->consultar($q);
         $palavraschaves = @!is_null($res[0]['keywords']) ? $res[0]['keywords'] : '';
+        $palavraschaves = $this->removerPontoFinal($palavraschaves);
+        $aux = explode(';', $palavraschaves);
+        $palavraschaves = implode('||', $aux);
+        
         return utf8_encode($palavraschaves);
     }
+    
+    private function removerPontoFinal($string) {
+        // Verifica se a string não está vazia e se o último caractere é um ponto.
+        if (!empty($string) && substr($string, -1) === '.') {
+            // Remove o ponto do final da string.
+            $string = substr($string, 0, -1);
+        }
+        return $string;
+    }           
 
     private function get_pages() {
         $q = "select pages from articles where article_id = {$this->id}";

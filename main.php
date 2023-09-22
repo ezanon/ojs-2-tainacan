@@ -57,7 +57,7 @@ foreach($journal_ids as $journal_id){
     $csv[0][] = 'Data da Publicação';
 
     $csv[0][] = 'Article_id|numeric|status_private';
-    $csv[0][] = 'Autores';
+    $csv[0][] = 'Autores|taxonomy|multiple';
     
     $csv[0][] = 'Título';
     $csv[0][] = 'Resumo|textarea';
