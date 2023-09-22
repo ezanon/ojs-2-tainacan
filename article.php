@@ -86,19 +86,20 @@ class article {
         // https://dev2.igc.usp.br/ojs-2-tainacan/wow/
         $q = "select file_name from article_files where article_id = {$this->id}";
         $res = $this->banco->consultar($q);
+
         $files = array();
         foreach ($res as $file) {
             $arquivonapasta = $this->file_in_folder($file['file_name']);
-            if ($arquivonapasta)
-                $files[] = $arquivonapasta;
-            else
+            if (!$arquivonapasta)
                 continue;
+            else
+                $files[] = $arquivonapasta;
         }
         if (count($files)==0){
             $this->file = '';
             $this->files = '';
         }
-        elseif (count($files)>1){
+        elseif (count($files)==1){
             $this->file = $files[0];
             $this->files = '';
         }
@@ -107,7 +108,6 @@ class article {
             unset($files[0]);
             $this->files = implode("||", $files); // anexos
         }
-
         return true;
     }
 
@@ -137,7 +137,7 @@ class article {
             case 'ED': $pasta = 'submission/editor';
                 break;
             default:
-                echo "\nERRO: Pasta de arquivo não encontrada: {$file} Revista $this->journalid Artigo $this->id\n\n";
+                echo "\nERRO: Pasta de arquivo não encontrada: {$file} Revista $this->journalid Artigo {$this->id}\n\n";
                 die();
         }
         $fileinfolder = str_replace('[FILEPATH]', $pasta, $this->filesfolder) . $file;
@@ -159,7 +159,7 @@ class article {
      */
     private function get_autores() {
         // obtém ids dos autores
-        $q = "select author_id as id from authors where submission_id=$this->id order by author_id";
+        $q = "select author_id as id from authors where submission_id={$this->id} order by author_id";
         $res = $this->banco->consultar($q);
         // loop nos autores pegando seus dados
         $autores = array();
