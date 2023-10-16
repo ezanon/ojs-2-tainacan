@@ -10,6 +10,8 @@ $config = array(
 
 $url = 'https://yourojs.com/index.php/';
 
+$urlarticle = $url . '[JOURNALPATH]/article/view/[ARTICLEID]';
+
 //$folder = '/sites-usp/ppegeo/files/journals/[JOURNALID]/articles/[ARTICLEID]/public/';
 $folder = 'https://yourojs.com/folderwhereareyourfiles/journals/[JOURNALID]/articles/[ARTICLEID]/[FILEPATH]/';
 

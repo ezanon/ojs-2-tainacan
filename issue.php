@@ -32,7 +32,9 @@ class issue {
         //$this->data_publicacao = $res[0]['date_published'];
         $aux = $res[0]['date_published'];
         $aux = explode(" ", $aux);
-        $this->data_publicacao = $aux[0];
+        $aux = explode("-", $aux[0]);
+        $aux = array_reverse($aux);
+        $this->data_publicacao = implode("-", $aux);
         // obtém ids dos artigos da revista
         $this->get_articles_ids();
         return true;

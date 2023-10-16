@@ -6,7 +6,7 @@ require_once './author.php';
 class article {
 
     public $banco;
-    public $id;
+    public $id, $linkojs;
     public $journalpath;
     public $journalid;
     public $issueid;
@@ -28,6 +28,10 @@ class article {
         $this->journalid = $jid;
         // obtém o path da revista a que pertence este artigo
         $this->get_path();
+        // define o link do atual ojs
+        global $urlarticle;
+        $this->linkojs = str_replace('[JOURNALPATH]', $this->journalpath, $urlarticle);
+        $this->linkojs = str_replace('[ARTICLEID]', $this->id, $this->linkojs);
         // obtém locales do artigo
         $this->get_locales();
         // monta pasta onde estão os arquivos deste artigo
@@ -82,8 +86,6 @@ class article {
      */
     private function get_files() {
         // modelo: https://ppegeo.igc.usp.br/index.php/GeoCT/article/download/13983/13581
-        // https://ppegeo.igc.usp.br/index.php/[alias]/article/download/[13983]/[13581]
-        // https://dev2.igc.usp.br/ojs-2-tainacan/wow/
         $q = "select file_name from article_files where article_id = {$this->id}";
         $res = $this->banco->consultar($q);
 
@@ -177,7 +179,9 @@ class article {
                 and setting_name='abstract' and locale='{$locale}'";
         $res = $this->banco->consultar($q);
         $resumo = @!is_null($res[0]['resumo']) ? $res[0]['resumo'] : '';
-        return utf8_encode($resumo);
+        $resumo = utf8_encode($resumo);
+        $resumo = strip_tags($resumo);
+        return $resumo;
     }
 
     private function get_palavraschaves($locale = 'pt_BR') {

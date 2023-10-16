@@ -57,7 +57,8 @@ foreach($journal_ids as $journal_id){
     $csv[0][] = 'Data da Publicação';
 
     $csv[0][] = 'Article_id|numeric|status_private';
-    $csv[0][] = 'Autores|taxonomy|multiple';
+    $csv[0][] = 'Link OJS|status_private';
+    $csv[0][] = 'Autores|text|multiple';
     
     $csv[0][] = 'Título';
     $csv[0][] = 'Resumo|textarea';
@@ -111,22 +112,47 @@ foreach($journal_ids as $journal_id){
 
             // id
             $csv[$lin][] = $article->id;
+            $csv[$lin][] = $article->linkojs;
             
             // autores
             $csv[$lin][] = $article->authors;
 
             // titulo, resumo e palavras chaves possuem locales
             foreach ($locales as $locale){
-                $csv[$lin][] = @$article->title[$locale] ? $article->title[$locale] : '';
-                $csv[$lin][] = @$article->abstract[$locale] ? $article->abstract[$locale] : '';
-                $csv[$lin][] = @$article->keywords[$locale] ? $article->keywords[$locale] : '';
+//                $csv[$lin][] = @$article->title[$locale] ? $article->title[$locale] : '';
+//                $csv[$lin][] = @$article->abstract[$locale] ? $article->abstract[$locale] : '';
+//                $csv[$lin][] = @$article->keywords[$locale] ? $article->keywords[$locale] : '';
+                
+                if ($locale == 'pt_BR'){
+                    // titulo
+                    if ($article->title[$locale] == '') $csv[$lin][] = $article->title['en_US'] ? $article->title['en_US'] : 'sem_titulo';
+                    else $csv[$lin][] = $article->title[$locale];
+                    // abstract
+                    if ($article->abstract[$locale] == '') $csv[$lin][] = @$article->abstract['en_US'] ? $article->abstract['en_US'] : '';
+                    else $csv[$lin][] = $article->abstract[$locale];
+                    // keywords
+                    if ($article->keywords[$locale] == '') $csv[$lin][] = @$article->keywords['en_US'] ? $article->keywords['en_US'] : '';
+                    else $csv[$lin][] = $article->keywords[$locale];
+                }
+                else {
+                    $csv[$lin][] = @$article->title[$locale] ? $article->title[$locale] : '';
+                    $csv[$lin][] = @$article->abstract[$locale] ? $article->abstract[$locale] : '';
+                    $csv[$lin][] = @$article->keywords[$locale] ? $article->keywords[$locale] : '';
+                }
+
+                
             }
 
             // demais dados independentes do locale
             $csv[$lin][] = $article->pages;
             $csv[$lin][] = $article->doi;
-            $csv[$lin][] = 'file:' . $article->file;
+            $csv[$lin][] = $article->file != '' ? 'file:' . $article->file : '';
             $csv[$lin][] = $article->files;
+            
+//            if ($lin == 6){
+//                print_r($csv[$lin]);
+//                die();
+//            }
 
             $lin++;
             echo '.';
